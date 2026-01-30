@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Priority Matrix</title>
+    <style>
+        :root {
+            --bg: #ffffff; --text: #202124; --accent: #e44332; --border: #ddd;
+            --p1: #d1453b; --p2: #eb8909; --p3: #246fe0; --p4: #777;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #1f1f1f; --text: #eee; --border: #444; }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg); color: var(--text); padding: 20px; margin: 0;
+            display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
+        }
+        h2 { margin: 0 0 20px 0; font-size: 18px; text-align: center; color: var(--accent); }
+        
+        input[type="text"], select {
+            width: 100%; padding: 12px; margin-bottom: 20px;
+            border: 1px solid var(--border); border-radius: 8px;
+            background: var(--bg); color: var(--text); font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .slider-group { margin-bottom: 20px; }
+        .label-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+        .desc { font-size: 12px; color: var(--accent); font-weight: normal; }
+        
+        input[type="range"] {
+            width: 100%; accent-color: var(--accent); height: 6px; cursor: pointer;
+        }
+
+        .result-box {
+            text-align: center; padding: 15px; background: rgba(0,0,0,0.05);
+            border-radius: 12px; margin-bottom: 20px;
+        }
+        #score { font-size: 32px; font-weight: 800; display: block; }
+        #zone { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+        button {
+            width: 100%; padding: 15px; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: 700; color: white; cursor: pointer;
+            margin-bottom: 10px; transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+        #btn-todoist { background: var(--accent); }
+        #btn-copy { background: #555; }
+        #btn-reset { background: transparent; color: #888; font-weight: normal; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <h2>⚡ Priority Matrix v7.4</h2>
+
+    <input type="text" id="pName" placeholder="Task Name" autocomplete="off">
+    
+    <select id="pProj">
+        <option value="Inbox">Inbox</option>
+        <option value="Osobní">🧑 Osobní</option>
+        <option value="Škola">📚 Škola</option>
+    </select>
+
+    <div class="slider-group">
+        <div class="label-row">
+            <span>Effort (E)</span> <span id="dE" class="desc">Start</span>
+        </div>
+        <input type="range" id="sE" min="1" max="6" value="4">
+    </div>
+
+    <div class="slider-group">
+        <div class="label-row">
+            <span>Importance (I)</span> <span id="dI" class="desc">Start</span>
+        </div>
+        <input type="range" id="sI" min="1" max="5" value="3">
+    </div>
+
+    <div class="slider-group">
+        <div class="label-row">
+            <span>Urgency (U)</span> <span id="dU" class="desc">Start</span>
+        </div>
+        <input type="range" id="sU" min="1" max="6" value="3">
+    </div>
+
+    <div class="result-box">
+        <span id="score">0%</span>
+        <div id="zone">Calculating...</div>
+    </div>
+
+    <button id="btn-todoist">Open in Todoist 🔴</button>
+    <button id="btn-copy">Copy Text 📋</button>
+    <button id="btn-reset">Reset</button>
+
+    <script>
+        const eDesc = ["", "Epic (Semester)", "Sprint (2-3 days)", "Half-Day (4h)", "Session (90m)", "Pomodoro (25m)", "Micro (<5m)"];
+        const iDesc = ["", "OPTIONAL", "BONUS", "MAINTAIN", "GROWTH", "VITAL"];
+        const uDesc = ["", "Someday", "This Month", "Next Week", "This Week", "Tomorrow", "TODAY"];
+
+        const els = {
+            name: document.getElementById('pName'),
+            proj: document.getElementById('pProj'),
+            sE: document.getElementById('sE'), sI: document.getElementById('sI'), sU: document.getElementById('sU'),
+            dE: document.getElementById('dE'), dI: document.getElementById('dI'), dU: document.getElementById('dU'),
+            score: document.getElementById('score'), zone: document.getElementById('zone')
+        };
+
+        function getResult() {
+            const e = parseInt(els.sE.value);
+            const i = parseInt(els.sI.value);
+            const u = parseInt(els.sU.value);
+            
+            els.dE.innerText = eDesc[e];
+            els.dI.innerText = iDesc[i];
+            els.dU.innerText = uDesc[u];
+
+            const score = (0.6 * e) * i * u;
+            const pct = Math.round((score/108)*100);
+            
+            let pTag = "p4"; 
+            let dateSyntax = "";
+            let zoneText = "P4 📉 LIMIT TIME";
+            let color = "var(--p4)";
+
+            if(score >= 45) { 
+                pTag = "p1"; dateSyntax = " tod"; 
+                zoneText = "P1 🔥 DO FIRST"; color = "var(--p1)";
+            } else if(score >= 15) { 
+                pTag = "p2"; 
+                zoneText = "P2 🎯 SCHEDULE"; color = "var(--p2)";
+            } else if(score >= 5) { 
+                pTag = "p3"; 
+                zoneText = "P3 ⏳ BATCH"; color = "var(--p3)";
+            }
+
+            els.score.innerText = pct + "%";
+            els.score.style.color = color;
+            els.zone.innerText = zoneText;
+            els.zone.style.color = color;
+
+            const name = els.name.value.trim() || "New Task";
+            let projSyntax = (els.proj.value !== 'Inbox') ? " #" + els.proj.value : "";
+            
+            return `${name} [${pct}%] ${pTag}${dateSyntax}${projSyntax}`;
+        }
+
+        function update() { getResult(); }
+
+        document.getElementById('btn-todoist').onclick = () => {
+            const text = getResult();
+            // Deep Link to Todoist App
+            window.location.href = `todoist://addtask?content=${encodeURIComponent(text)}`;
+        };
+
+        document.getElementById('btn-copy').onclick = () => {
+            navigator.clipboard.writeText(getResult());
+            const btn = document.getElementById('btn-copy');
+            btn.innerText = "Copied!";
+            setTimeout(() => btn.innerText = "Copy Text 📋", 1500);
+        };
+
+        document.getElementById('btn-reset').onclick = () => {
+            els.name.value = ""; els.sE.value = 4; els.sI.value = 3; els.sU.value = 3;
+            update();
+        };
+
+        [els.sE, els.sI, els.sU, els.name].forEach(el => el.addEventListener('input', update));
+        update();
+    </script>
+</body>
+</html>
