@@ -7,6 +7,7 @@
     
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
+
     <style>
         :root {
             --bg: #ffffff; --text: #202124; --accent: #e44332; --border: #ddd;
@@ -151,25 +152,37 @@
 
         function update() { getResult(); }
 
+        function resetForm() {
+            els.name.value = ""; 
+            els.sE.value = 4; 
+            els.sI.value = 3; 
+            els.sU.value = 3;
+            els.proj.selectedIndex = 0;
+            update();
+        }
+
         document.getElementById('btn-todoist').onclick = () => {
             const text = getResult();
             // Deep Link to Todoist App
             window.location.href = `todoist://addtask?content=${encodeURIComponent(text)}`;
+            
+            // Wait slightly for the app to open, then wipe the fields
+            setTimeout(resetForm, 500);
         };
 
         document.getElementById('btn-copy').onclick = () => {
             navigator.clipboard.writeText(getResult());
             const btn = document.getElementById('btn-copy');
             btn.innerText = "Copied!";
-            setTimeout(() => btn.innerText = "Copy Text 📋", 1500);
+            setTimeout(() => {
+                btn.innerText = "Copy Text 📋";
+                resetForm(); // Optional: remove this if you only want reset on Todoist button
+            }, 1000);
         };
 
-        document.getElementById('btn-reset').onclick = () => {
-            els.name.value = ""; els.sE.value = 4; els.sI.value = 3; els.sU.value = 3;
-            update();
-        };
+        document.getElementById('btn-reset').onclick = resetForm;
 
-        [els.sE, els.sI, els.sU, els.name].forEach(el => el.addEventListener('input', update));
+        [els.sE, els.sI, els.sU, els.name, els.proj].forEach(el => el.addEventListener('input', update));
         update();
     </script>
 </body>
